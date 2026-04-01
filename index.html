@@ -1,0 +1,1021 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Dornsife Image Prep Tool</title>
+<style>
+  @import url('https://fonts.googleapis.com/css2?family=DM+Serif+Display&family=DM+Sans:wght@300;400;500;600&display=swap');
+
+  *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
+
+  :root {
+    --gold: #a2813a;
+    --gold-light: #c9a85c;
+    --cardinal: #990000;
+    --cardinal-dark: #6b0000;
+    --off-white: #f7f4ef;
+    --warm-gray: #e8e3da;
+    --mid-gray: #1c1916;
+    --dark: #1c1916;
+    --panel: #ffffff;
+    --border: #ddd8cf;
+    --radius: 8px;
+    --shadow: 0 2px 16px rgba(28,25,22,0.08);
+  }
+
+  body {
+    font-family: 'DM Sans', sans-serif;
+    background: var(--off-white);
+    color: var(--dark);
+    min-height: 100vh;
+  }
+
+  header {
+    background: var(--cardinal);
+    padding: 0 32px;
+    display: flex;
+    align-items: center;
+    gap: 16px;
+    height: 60px;
+    position: sticky; top: 0; z-index: 100;
+    box-shadow: 0 2px 12px rgba(0,0,0,0.2);
+  }
+  header h1 {
+    font-family: 'DM Sans', sans-serif;
+    font-weight: 300;
+    font-size: 0.95rem;
+    color: rgba(255,255,255,0.85);
+    border-left: 1px solid rgba(255,255,255,0.3);
+    padding-left: 16px;
+    letter-spacing: 0.06em;
+    text-transform: uppercase;
+  }
+
+  .app {
+    max-width: 1200px;
+    margin: 0 auto;
+    padding: 32px 24px 64px;
+    display: grid;
+    grid-template-columns: 360px 1fr;
+    gap: 24px;
+    align-items: start;
+  }
+
+  .panel {
+    background: var(--panel);
+    border: 1px solid var(--border);
+    border-radius: var(--radius);
+    box-shadow: var(--shadow);
+    overflow: hidden;
+  }
+  .panel-header {
+    background: var(--dark);
+    color: white;
+    padding: 14px 20px;
+    font-size: 0.7rem;
+    font-weight: 600;
+    letter-spacing: 0.12em;
+    text-transform: uppercase;
+  }
+  .panel-body { padding: 20px; }
+
+  .step-label {
+    display: flex;
+    align-items: center;
+    gap: 10px;
+    margin-bottom: 12px;
+    margin-top: 20px;
+  }
+  .step-label:first-child { margin-top: 0; }
+  .step-num {
+    width: 24px; height: 24px;
+    background: var(--cardinal);
+    color: white;
+    border-radius: 50%;
+    font-size: 0.72rem;
+    font-weight: 600;
+    display: flex; align-items: center; justify-content: center;
+    flex-shrink: 0;
+  }
+  .step-label span {
+    font-size: 0.78rem;
+    font-weight: 600;
+    letter-spacing: 0.05em;
+    text-transform: uppercase;
+    color: var(--dark);
+  }
+
+  select, input[type="text"] {
+    width: 100%;
+    padding: 10px 12px;
+    border: 1.5px solid var(--border);
+    border-radius: 6px;
+    font-family: 'DM Sans', sans-serif;
+    font-size: 0.88rem;
+    color: var(--dark);
+    background: white;
+    transition: border-color 0.15s;
+    appearance: none;
+  }
+  select:focus, input:focus {
+    outline: none;
+    border-color: var(--gold);
+    box-shadow: 0 0 0 3px rgba(162,129,58,0.12);
+  }
+  .select-wrap { position: relative; }
+  .select-wrap::after {
+    content: '▾';
+    position: absolute; right: 12px; top: 50%; transform: translateY(-50%);
+    color: var(--mid-gray); pointer-events: none; font-size: 0.85rem;
+  }
+
+  .component-info {
+    background: var(--off-white);
+    border: 1px solid var(--border);
+    border-radius: 6px;
+    padding: 12px 14px;
+    margin-top: 12px;
+    font-size: 0.82rem;
+    line-height: 1.6;
+    display: none;
+  }
+  .component-info.visible { display: block; }
+  .component-info strong { color: var(--cardinal); }
+  .info-row { display: flex; justify-content: space-between; gap: 8px; }
+  .info-label { color: var(--mid-gray); font-size: 0.75rem; text-transform: uppercase; letter-spacing: 0.05em; }
+
+  .filename-preview {
+    background: var(--dark);
+    border-radius: 6px;
+    padding: 12px 14px;
+    margin-top: 12px;
+    font-family: 'Courier New', monospace;
+    font-size: 0.82rem;
+    color: var(--gold-light);
+    word-break: break-all;
+    min-height: 40px;
+    display: flex;
+    align-items: center;
+  }
+  .filename-placeholder { color: rgba(255,255,255,0.55); font-style: italic; font-family: 'DM Sans', sans-serif; font-size: 0.8rem; }
+
+  .drop-zone {
+    border: 2px dashed var(--border);
+    border-radius: var(--radius);
+    padding: 40px 20px;
+    text-align: center;
+    cursor: pointer;
+    transition: all 0.2s;
+    background: white;
+  }
+  .drop-zone:hover, .drop-zone.dragover {
+    border-color: var(--gold);
+    background: rgba(162,129,58,0.04);
+  }
+  .drop-icon { font-size: 2.5rem; margin-bottom: 12px; }
+  .drop-zone p { font-size: 0.88rem; color: var(--mid-gray); }
+  .drop-zone:focus {
+    outline: 2px solid var(--gold);
+    outline-offset: -2px;
+    border-color: var(--gold);
+  }
+  .browse-btn {
+    background: none;
+    border: none;
+    padding: 0;
+    font-family: inherit;
+    font-size: inherit;
+    font-weight: bold;
+    color: var(--cardinal);
+    cursor: pointer;
+    display: inline;
+  }
+  #file-input { display: none; }
+
+  .canvas-area {
+    position: relative;
+    background: #111;
+    border-radius: var(--radius);
+    overflow: hidden;
+    min-height: 300px;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+  }
+  .canvas-area-placeholder {
+    color: rgba(255,255,255,0.7);
+    font-size: 0.88rem;
+    text-align: center;
+    padding: 40px;
+  }
+  #crop-canvas {
+    display: block;
+    cursor: crosshair;
+    max-width: 100%;
+  }
+  .crop-overlay {
+    position: absolute;
+    border: 2px solid var(--gold-light);
+    box-shadow: 0 0 0 9999px rgba(0,0,0,0.55);
+    pointer-events: none;
+  }
+
+  #output-preview-wrap {
+    margin-top: 16px;
+    display: none;
+  }
+  #output-preview-wrap.visible { display: block; }
+  #output-canvas { display: none; }
+  #output-preview {
+    width: 100%;
+    border-radius: 6px;
+    border: 1px solid var(--border);
+    display: block;
+  }
+  .output-meta {
+    display: flex; gap: 12px; margin-top: 8px;
+    font-size: 0.78rem; color: var(--mid-gray);
+  }
+
+  .btn {
+    display: inline-flex; align-items: center; gap: 8px;
+    padding: 11px 20px;
+    border: none; border-radius: 6px;
+    font-family: 'DM Sans', sans-serif;
+    font-size: 0.88rem;
+    font-weight: 500;
+    cursor: pointer;
+    transition: all 0.15s;
+  }
+  .btn-primary {
+    background: var(--cardinal);
+    color: white;
+    width: 100%;
+    justify-content: center;
+    font-size: 0.9rem;
+    font-weight: 600;
+    letter-spacing: 0.03em;
+    padding: 13px 20px;
+    margin-top: 16px;
+  }
+  .btn-primary:hover { background: var(--cardinal-dark); }
+  .btn-primary:disabled { opacity: 0.4; cursor: not-allowed; }
+  .btn-secondary {
+    background: var(--off-white);
+    color: var(--dark);
+    border: 1.5px solid var(--border);
+    font-size: 0.82rem;
+  }
+  .btn-secondary:hover { background: var(--warm-gray); }
+  .btn-gold {
+    background: #7a5e1e;
+    color: white;
+    width: 100%;
+    justify-content: center;
+    font-size: 0.9rem;
+    font-weight: 600;
+    padding: 13px 20px;
+    margin-top: 12px;
+  }
+  .btn-gold:hover { background: #5c4615; }
+  .btn-gold:disabled { opacity: 0.4; cursor: not-allowed; }
+
+  .crop-controls {
+    display: flex; gap: 8px; margin-top: 12px; flex-wrap: wrap;
+  }
+
+  /* Zoom controls */
+  .zoom-controls {
+    display: flex;
+    align-items: center;
+    gap: 10px;
+    margin-top: 12px;
+    padding: 10px 14px;
+    background: rgba(162,129,58,0.06);
+    border: 1px solid rgba(162,129,58,0.2);
+    border-radius: 6px;
+  }
+  .zoom-label-text {
+    font-size: 0.72rem;
+    font-weight: 600;
+    letter-spacing: 0.07em;
+    text-transform: uppercase;
+    color: var(--mid-gray);
+    flex-shrink: 0;
+  }
+  .zoom-btn {
+    width: 30px;
+    height: 30px;
+    padding: 0;
+    flex-shrink: 0;
+    font-size: 1.1rem;
+    font-weight: 700;
+    line-height: 1;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    border-radius: 4px;
+  }
+  #zoom-slider {
+    flex: 1;
+    height: 4px;
+    appearance: none;
+    background: var(--border);
+    border-radius: 2px;
+    border: none;
+    padding: 0;
+    cursor: pointer;
+    accent-color: var(--gold);
+  }
+  #zoom-slider::-webkit-slider-thumb {
+    appearance: none;
+    width: 16px;
+    height: 16px;
+    border-radius: 50%;
+    background: var(--gold);
+    cursor: pointer;
+    box-shadow: 0 1px 4px rgba(0,0,0,0.2);
+  }
+  #zoom-slider::-moz-range-thumb {
+    width: 16px;
+    height: 16px;
+    border-radius: 50%;
+    background: var(--gold);
+    cursor: pointer;
+    border: none;
+    box-shadow: 0 1px 4px rgba(0,0,0,0.2);
+  }
+  #zoom-slider:focus {
+    outline: 2px solid var(--gold);
+    outline-offset: 2px;
+  }
+  .zoom-pct {
+    font-size: 0.82rem;
+    font-weight: 600;
+    color: var(--dark);
+    min-width: 40px;
+    text-align: right;
+    flex-shrink: 0;
+  }
+
+  .hint {
+    font-size: 0.76rem;
+    color: var(--mid-gray);
+    margin-top: 6px;
+    line-height: 1.5;
+  }
+
+  .right-col { display: flex; flex-direction: column; gap: 20px; }
+  .right-col .panel-body { padding: 20px; }
+
+  .crop-instructions {
+    background: rgba(162,129,58,0.08);
+    border: 1px solid rgba(162,129,58,0.2);
+    border-radius: 6px;
+    padding: 10px 14px;
+    font-size: 0.78rem;
+    color: #6b5a2e;
+    line-height: 1.6;
+    margin-bottom: 12px;
+  }
+
+  @media (max-width: 800px) {
+    .app { grid-template-columns: 1fr; }
+  }
+</style>
+</head>
+<body>
+
+
+<div class="app">
+
+  <div class="left-col">
+    <div class="panel">
+      <h2 class="panel-header"><span aria-hidden="true">⚙</span> Settings</h2>
+      <div class="panel-body">
+
+        <div class="step-label">
+          <div class="step-num">1</div>
+          <span id="component-select-label">Choose Component</span>
+        </div>
+        <div class="select-wrap">
+          <select id="component-select" aria-labelledby="component-select-label">
+            <option value="">— Select a component —</option>
+            <optgroup label="Hero">
+              <option value="hero-program">Hero Program</option>
+            </optgroup>
+            <optgroup label="Body Components">
+              <option value="accordions">Accordions</option>
+              <option value="article-carousels">Article Carousels</option>
+              <option value="card-flip">Card Flip</option>
+              <option value="cta-with-images">CTA + Images</option>
+              <option value="contact-block">Contact Block</option>
+              <option value="department-news-events-promo">Department News and Events Promo</option>
+              <option value="editorial-carousel">Editorial Carousel</option>
+              <option value="editorial-cards">Editorial Cards – Landscape</option>
+              <option value="editorial-cards-portrait">Editorial Cards – Portrait</option>
+              <option value="featured-block">Featured Block</option>
+              <option value="full-width-image-text">Full Width Image and Text</option>
+              <option value="image-gallery">Image Gallery</option>
+              <option value="interactive-content-pane">Interactive Content Pane</option>
+              <option value="interactive-quote-pane">Interactive Quote Pane</option>
+              <option value="modal-image-gallery">Modal Image Gallery</option>
+              <option value="news-cards-topic">News by Topic</option>
+              <option value="news-and-events-promo">News and Events Promo</option>
+              <option value="people-profile">People Profile</option>
+              <option value="photo-wall">Photo Wall</option>
+              <option value="quote">Quote</option>
+              <option value="scrolling-text-with-image">Scrolling Text with Image Block</option>
+              <option value="sign-up-form">Sign-Up Form</option>
+              <option value="social-media-facebook">Social Media: Facebook</option>
+              <option value="social-media-instagram">Social Media: Instagram</option>
+              <option value="spotlight">Spotlight</option>
+              <option value="stacking-cards">Stacking Cards: Landscape</option>
+              <option value="stacking-cards-portrait">Stacking Cards: Portrait</option>
+              <option value="video-pane-horizontal">Video Pane: Landscape</option>
+              <option value="video-pane-vertical">Video Pane: Portrait</option>
+              <option value="video-with-text">Video with Text</option>
+            </optgroup>
+          </select>
+        </div>
+
+        <div class="component-info" id="component-info">
+          <div class="info-row">
+            <div>
+              <div class="info-label">Upload Size</div>
+              <strong id="info-upload"></strong>
+            </div>
+            <div>
+              <div class="info-label">Ratio</div>
+              <strong id="info-ratio"></strong>
+            </div>
+            <div>
+              <div class="info-label">Display Size</div>
+              <span id="info-display"></span>
+            </div>
+          </div>
+          <div style="margin-top:8px; font-size:0.76rem; color: var(--dark)" id="info-note"></div>
+          <div style="margin-top:8px;">
+            <a id="info-link" href="#" target="_blank" rel="noopener" style="font-size:0.76rem; color: var(--cardinal); text-decoration:none; font-weight:500;">View in Component Library ↗</a>
+          </div>
+        </div>
+
+        <div id="chaptered-toggle-wrap" style="display:none; margin-top:12px; background:var(--off-white); border:1px solid var(--border); border-radius:6px; padding:10px 14px;">
+          <label style="display:flex; align-items:center; gap:10px; cursor:pointer; font-size:0.82rem; font-weight:500; user-select:none;">
+            <input type="checkbox" id="chaptered-toggle" style="width:16px; height:16px; accent-color:var(--cardinal); cursor:pointer; flex-shrink:0;">
+            Chaptered page
+          </label>
+          <div class="hint" style="margin-top:4px;">When enabled, exports at 300×375 px instead of 900×1125 px.</div>
+        </div>
+
+        <div class="step-label">
+          <div class="step-num">2</div>
+          <span id="slug-input-label">Name Your File</span>
+        </div>
+        <input type="text" id="slug-input" aria-labelledby="slug-input-label" placeholder="e.g. chemistry  or  earth-sciences-news" />
+        <div class="hint">Use lowercase with hyphens. The component name will be appended automatically.</div>
+        <div class="filename-preview" id="filename-preview">
+          <span class="filename-placeholder">Filename will appear here…</span>
+        </div>
+
+        <div class="step-label">
+          <div class="step-num">3</div>
+          <span>Upload Your Image</span>
+        </div>
+        <div class="drop-zone" id="drop-zone">
+          <div class="drop-icon" aria-hidden="true">🖼</div>
+          <p>Drag &amp; drop an image here<br>or <button type="button" class="browse-btn" onclick="document.getElementById('file-input').click()">browse to upload</button></p>
+          <input type="file" id="file-input" accept="image/*">
+        </div>
+
+      </div>
+    </div>
+  </div>
+
+  <div class="right-col">
+    <div class="panel">
+      <h2 class="panel-header"><span aria-hidden="true">✂</span> Crop &amp; Preview</h2>
+      <div class="panel-body">
+        <div class="crop-instructions" id="crop-instructions" style="display:none">
+          Drag to reposition the crop box. The gold box shows exactly what will be exported. Use the zoom slider to zoom in and crop a tighter region.
+        </div>
+        <div class="canvas-area" id="canvas-area">
+          <div class="canvas-area-placeholder" id="canvas-placeholder">
+            <div style="font-size:2rem;margin-bottom:12px;" aria-hidden="true">📐</div>
+            Select a component and upload an image to begin
+          </div>
+          <canvas id="crop-canvas" style="display:none"></canvas>
+          <div class="crop-overlay" id="crop-overlay" style="display:none">
+            <div id="crop-resize-top" style="display:none; position:absolute; top:0; left:0; width:100%; height:14px; cursor:ns-resize; pointer-events:auto; align-items:center; justify-content:center;">
+              <div style="width:36px;height:4px;background:rgba(255,255,255,0.85);border-radius:2px;"></div>
+            </div>
+            <div id="crop-resize-bottom" style="display:none; position:absolute; bottom:0; left:0; width:100%; height:14px; cursor:ns-resize; pointer-events:auto; align-items:center; justify-content:center;">
+              <div style="width:36px;height:4px;background:rgba(255,255,255,0.85);border-radius:2px;"></div>
+            </div>
+          </div>
+        </div>
+
+        <div class="zoom-controls" id="zoom-controls" style="display:none">
+          <span class="zoom-label-text">Zoom</span>
+          <button class="btn btn-secondary zoom-btn" onclick="adjustZoom(-5)" title="Zoom out">−</button>
+          <input type="range" id="zoom-slider" min="100" max="300" value="100" step="5" aria-label="Zoom">
+          <button class="btn btn-secondary zoom-btn" onclick="adjustZoom(5)" title="Zoom in">+</button>
+          <span class="zoom-pct" id="zoom-pct">100%</span>
+        </div>
+
+        <div class="crop-controls" id="crop-controls" style="display:none">
+          <button class="btn btn-secondary" onclick="moveCrop(-10, 0)">← Shift Left</button>
+          <button class="btn btn-secondary" onclick="moveCrop(10, 0)">→ Shift Right</button>
+          <button class="btn btn-secondary" onclick="moveCrop(0, -10)">↑ Shift Up</button>
+          <button class="btn btn-secondary" onclick="moveCrop(0, 10)">↓ Shift Down</button>
+          <button class="btn btn-secondary" onclick="centerCrop()">⊞ Center</button>
+        </div>
+
+        <button class="btn btn-primary" id="apply-btn" disabled onclick="applyAndPreview()">
+          <span aria-hidden="true">✦</span> Apply Crop &amp; Preview
+        </button>
+      </div>
+    </div>
+
+    <div class="panel" id="output-panel" style="display:none">
+      <h2 class="panel-header"><span aria-hidden="true">⬇</span> Output</h2>
+      <div class="panel-body">
+        <div id="output-preview-wrap" class="visible">
+          <img id="output-preview" alt="Output preview" />
+          <div class="output-meta">
+            <span id="out-size"></span>
+            <span id="out-filename"></span>
+          </div>
+        </div>
+        <canvas id="output-canvas"></canvas>
+        <button class="btn btn-gold" id="download-btn" onclick="downloadImage()">
+          <span aria-hidden="true">⬇</span> Download Image
+        </button>
+        <div class="hint" style="text-align:center; margin-top:8px">File will be exported at the recommended upload size for retina displays.</div>
+      </div>
+    </div>
+  </div>
+</div>
+
+<script>
+const BASE_URL = 'https://dornsife.usc.edu/components/';
+const COMPONENTS = {
+  // Hero
+  'hero-program':                  { name: 'hero-program',                w: 2000, h: 1150, ratio: '16:9',     display: '1000×563',  note: '', url: 'https://dtssupport.usc.edu/support/solutions/articles/7000069025#loaded' },
+  // Body Components
+  'accordions':                    { name: 'accordions',                  w: 1050, h: 0,    ratio: 'Flexible', display: '350px wide', note: '', url: BASE_URL + 'accordions/' },
+  'article-carousels':             { name: 'article-carousels',           w: 1050, h: 591,  ratio: '16:9',     display: '350×197',   note: '', url: BASE_URL + 'article-carousels/' },
+  'card-flip':                     { name: 'card-flip',                   w: 1500, h: 1500, ratio: '1:1',      display: '500×500',   note: '', url: BASE_URL + 'card-flip/' },
+  'cta-with-images':               { name: 'cta-with-images',             w: 2000, h: 2000, ratio: '1:1',      display: '400×400',   note: '', url: BASE_URL + 'cta-with-images/' },
+  'contact-block':                 { name: 'contact-block',               w: 1050, h: 0,    ratio: 'Flexible', display: '350px wide', note: '', url: BASE_URL + 'contact-block/' },
+  'department-news-events-promo':  { name: 'department-news-events-promo', w: 600, h: 338,  ratio: '16:9',     display: '200×113',   note: '', url: BASE_URL + 'department-news-and-events-promo-component/' },
+  'editorial-carousel':            { name: 'editorial-carousel',          w: 768,  h: 432,  ratio: '16:9',     display: '256×144',   note: '', url: BASE_URL + 'editorial-carousel/' },
+  'editorial-cards':               { name: 'editorial-cards',             w: 1050, h: 591,  ratio: '16:9',     display: '350×197',   note: '', url: BASE_URL + 'editorial-cards/' },
+  'editorial-cards-portrait':      { name: 'editorial-cards-portrait',    w: 975,  h: 1365, ratio: '5:7',      display: '325×455',   note: '', url: BASE_URL + 'editorial-cards/' },
+  'featured-block':                { name: 'featured-block',              w: 1800, h: 1800, ratio: '1:1',      display: '600×600',   note: '', url: BASE_URL + 'featured-block/' },
+  'full-width-image-text':         { name: 'full-width-image-text',       w: 2000, h: 1150, ratio: '16:9',     display: '1200×675',  note: '', url: BASE_URL + 'full-width-image-text/' },
+  'image-gallery':                 { name: 'image-gallery',               w: 1950, h: 1097, ratio: '16:9',     display: '650×365',   note: '', url: BASE_URL + 'image-gallery/' },
+  'interactive-content-pane':      { name: 'interactive-content-pane',    w: 2000, h: 1150, ratio: '16:9',     display: '100% vw',   note: '', url: BASE_URL + 'interactive-content-pane/' },
+  'interactive-quote-pane':        { name: 'interactive-quote-pane',      w: 2000, h: 1150, ratio: '16:9',     display: '100% vw',   note: '', url: BASE_URL + 'interactive-quote-pane/' },
+  'modal-image-gallery':           { name: 'modal-image-gallery',         w: 1500, h: 0,    ratio: 'Variable', display: '500px wide', note: '', url: BASE_URL + 'modal-image-gallery/' },
+  'news-cards-topic':              { name: 'news-cards-topic',            w: 1280, h: 720,  ratio: '16:9',     display: '427×240',   note: '', url: BASE_URL + 'news-cards-topic/' },
+  'news-and-events-promo':         { name: 'news-and-events-promo',       w: 1800, h: 1013, ratio: '16:9',     display: '600×338',   note: '', url: BASE_URL + 'news-and-events-promo/' },
+  'people-profile':                { name: 'people-profile',              w: 975,  h: 1365, ratio: '5:7',      display: '325×455',   note: '', url: 'https://dtssupport.usc.edu/support/solutions/articles/7000050811#loaded' },
+  'photo-wall':                    { name: 'photo-wall',                  w: 1500, h: 0,    ratio: 'Variable', display: '500px wide', note: '', url: BASE_URL + 'photo-wall/' },
+  'quote':                         { name: 'quote',                       w: 1280, h: 720,  ratio: '16:9',     display: '427×240',   note: '', url: BASE_URL + 'quote-component/' },
+  'scrolling-text-with-image':     { name: 'scrolling-text-with-image',   w: 1800, h: 2400, ratio: '3:4',      display: '50vw×100vh', note: '', url: BASE_URL + 'scrolling-text-with-image-block/' },
+  'sign-up-form':                  { name: 'sign-up-form',                w: 1350, h: 900,  ratio: '3:2',      display: '450px wide', note: '', url: BASE_URL + 'signup-form/' },
+  'social-media-facebook':         { name: 'social-media-facebook',       w: 1500, h: 844,  ratio: '16:9',     display: '500×281',   note: '', url: BASE_URL + 'social-media/' },
+  'social-media-instagram':        { name: 'social-media-instagram',      w: 900,  h: 900,  ratio: '1:1',      display: '300×300',   note: '', url: BASE_URL + 'social-media/' },
+  'spotlight':                     { name: 'spotlight',                   w: 975,  h: 975,  ratio: '1:1',      display: '325×325',   note: '', url: BASE_URL + 'spotlight/' },
+  'stacking-cards':                { name: 'stacking-cards',              w: 900,  h: 506,  ratio: '16:9',     display: '300×169',   note: '', url: BASE_URL + 'stacking-cards/' },
+  'stacking-cards-portrait':       { name: 'stacking-cards-portrait',     w: 900,  h: 1125, ratio: '3:4',      display: '300×375',   note: '', url: BASE_URL + 'stacking-cards/' },
+  'video-pane-horizontal':         { name: 'video-pane-horizontal',       w: 900,  h: 1600, ratio: '9:16',     display: '300×533',   note: '', url: BASE_URL + 'video-pane-component/' },
+  'video-pane-vertical':           { name: 'video-pane-vertical',         w: 1200, h: 675,  ratio: '16:9',     display: '400×225',   note: '', url: BASE_URL + 'video-pane-component/' },
+  'video-with-text':               { name: 'video-with-text',             w: 2000, h: 1150, ratio: '16:9',     display: '900×506',   note: '', url: BASE_URL + 'video-with-text/' },
+};
+
+let sourceImg = null;
+let cropX = 0, cropY = 0;
+let cropW = 0, cropH = 0;
+let baseCropW = 0, baseCropH = 0;  // crop dimensions at zoom 1.0
+let zoomLevel = 1.0;
+let canvasDisplayScale = 1;
+let isDragging = false;
+let dragStartX = 0, dragStartY = 0;
+let dragStartCropX = 0, dragStartCropY = 0;
+let currentComponent = null;
+let outputBlob = null;
+
+const compSelect   = document.getElementById('component-select');
+const slugInput    = document.getElementById('slug-input');
+const fileInput    = document.getElementById('file-input');
+const dropZone     = document.getElementById('drop-zone');
+const cropCanvas   = document.getElementById('crop-canvas');
+const cropOverlay  = document.getElementById('crop-overlay');
+const canvasPlaceholder = document.getElementById('canvas-placeholder');
+const applyBtn     = document.getElementById('apply-btn');
+const outputPanel  = document.getElementById('output-panel');
+const outputPreview = document.getElementById('output-preview');
+const outSize      = document.getElementById('out-size');
+const outFilename  = document.getElementById('out-filename');
+const downloadBtn  = document.getElementById('download-btn');
+const outputCanvas = document.getElementById('output-canvas');
+const compInfo     = document.getElementById('component-info');
+const cropControls = document.getElementById('crop-controls');
+const cropInstructions = document.getElementById('crop-instructions');
+const filenamePreview  = document.getElementById('filename-preview');
+const zoomControls = document.getElementById('zoom-controls');
+const zoomSlider   = document.getElementById('zoom-slider');
+const zoomPct      = document.getElementById('zoom-pct');
+
+const cropResizeTop    = document.getElementById('crop-resize-top');
+const cropResizeBottom = document.getElementById('crop-resize-bottom');
+let isResizing = false, resizeEdge = null;
+let resizeStartY = 0, resizeStartCropY = 0, resizeStartCropH = 0;
+
+function setResizeHandles(visible) {
+  const d = visible ? 'flex' : 'none';
+  cropResizeTop.style.display    = d;
+  cropResizeBottom.style.display = d;
+}
+
+function onResizeStart(edge, clientY) {
+  isResizing = true;
+  resizeEdge = edge;
+  resizeStartY = clientY;
+  resizeStartCropY = cropY;
+  resizeStartCropH = cropH;
+}
+
+cropResizeTop.addEventListener('mousedown', e => {
+  onResizeStart('top', e.clientY);
+  e.preventDefault(); e.stopPropagation();
+});
+cropResizeBottom.addEventListener('mousedown', e => {
+  onResizeStart('bottom', e.clientY);
+  e.preventDefault(); e.stopPropagation();
+});
+cropResizeTop.addEventListener('touchstart', e => {
+  onResizeStart('top', e.touches[0].clientY);
+  e.preventDefault(); e.stopPropagation();
+}, { passive: false });
+cropResizeBottom.addEventListener('touchstart', e => {
+  onResizeStart('bottom', e.touches[0].clientY);
+  e.preventDefault(); e.stopPropagation();
+}, { passive: false });
+
+// Zoom slider event
+zoomSlider.addEventListener('input', () => {
+  zoomLevel = parseInt(zoomSlider.value) / 100;
+  applyZoom();
+});
+
+function adjustZoom(delta) {
+  const newVal = Math.max(100, Math.min(300, parseInt(zoomSlider.value) + delta));
+  zoomSlider.value = newVal;
+  zoomLevel = newVal / 100;
+  applyZoom();
+}
+
+function applyZoom() {
+  zoomPct.textContent = Math.round(zoomLevel * 100) + '%';
+  if (!sourceImg || !baseCropW) return;
+
+  // Remember center of current crop to zoom around it
+  const centerX = cropX + cropW / 2;
+  const centerY = cropY + cropH / 2;
+
+  // Shrink the sampled region as zoom increases
+  cropW = Math.round(baseCropW / zoomLevel);
+  cropH = Math.round(baseCropH / zoomLevel);
+
+  // Keep crop centered on the same point, clamped to image bounds
+  cropX = Math.round(centerX - cropW / 2);
+  cropY = Math.round(centerY - cropH / 2);
+  cropX = Math.max(0, Math.min(sourceImg.width  - cropW, cropX));
+  cropY = Math.max(0, Math.min(sourceImg.height - cropH, cropY));
+
+  positionOverlay();
+}
+
+function resetZoom() {
+  zoomLevel = 1.0;
+  zoomSlider.value = 100;
+  zoomPct.textContent = '100%';
+}
+
+compSelect.addEventListener('change', () => {
+  const key = compSelect.value;
+  currentComponent = key ? COMPONENTS[key] : null;
+  updateComponentInfo();
+  updateFilename();
+  resetZoom();
+  if (sourceImg && currentComponent) setupCrop();
+  updateApplyBtn();
+  const chapteredWrap = document.getElementById('chaptered-toggle-wrap');
+  const chapteredToggle = document.getElementById('chaptered-toggle');
+  if (key === 'stacking-cards-portrait') {
+    chapteredWrap.style.display = 'block';
+  } else {
+    chapteredWrap.style.display = 'none';
+    chapteredToggle.checked = false;
+  }
+});
+
+function updateComponentInfo() {
+  if (!currentComponent) { compInfo.classList.remove('visible'); return; }
+  const c = currentComponent;
+  document.getElementById('info-upload').textContent = c.h > 0 ? `${c.w}×${c.h} px` : `${c.w}px wide`;
+  document.getElementById('info-ratio').textContent = c.ratio;
+  document.getElementById('info-display').textContent = c.display;
+  document.getElementById('info-note').textContent = c.note;
+  const infoLink = document.getElementById('info-link');
+  if (c.url) {
+    infoLink.href = c.url;
+    infoLink.parentElement.style.display = 'block';
+  } else {
+    infoLink.parentElement.style.display = 'none';
+  }
+  compInfo.classList.add('visible');
+}
+
+function slugify(str) {
+  return str.toLowerCase().replace(/[^a-z0-9\s-]/g, '').trim().replace(/[\s]+/g, '-');
+}
+
+function updateFilename() {
+  const slug = slugify(slugInput.value);
+  if (!slug && !currentComponent) {
+    filenamePreview.innerHTML = '<span class="filename-placeholder">Filename will appear here…</span>';
+    return;
+  }
+  const compName = currentComponent ? currentComponent.name : '[component]';
+  const parts = [slug, compName].filter(Boolean);
+  const ext = 'jpg';
+  const filename = parts.join('-') + '.' + ext;
+  filenamePreview.textContent = filename;
+}
+
+slugInput.addEventListener('input', updateFilename);
+
+function getFilename() {
+  const slug = slugify(slugInput.value);
+  const compName = currentComponent ? currentComponent.name : 'image';
+  const parts = [slug, compName].filter(Boolean);
+  return parts.join('-') + '.jpg';
+}
+
+dropZone.addEventListener('dragover', e => { e.preventDefault(); dropZone.classList.add('dragover'); });
+dropZone.addEventListener('dragleave', () => dropZone.classList.remove('dragover'));
+dropZone.addEventListener('drop', e => {
+  e.preventDefault(); dropZone.classList.remove('dragover');
+  const file = e.dataTransfer.files[0];
+  if (file && file.type.startsWith('image/')) loadImageFile(file);
+});
+fileInput.addEventListener('change', () => {
+  if (fileInput.files[0]) loadImageFile(fileInput.files[0]);
+});
+dropZone.addEventListener('click', () => fileInput.click());
+dropZone.addEventListener('keydown', e => {
+  if (e.key === 'Enter' || e.key === ' ') { e.preventDefault(); fileInput.click(); }
+});
+
+function loadImageFile(file) {
+  const reader = new FileReader();
+  reader.onload = e => {
+    const img = new Image();
+    img.onload = () => {
+      sourceImg = img;
+      resetZoom();
+      if (currentComponent) {
+        setupCrop();
+        updateApplyBtn();
+      } else {
+        renderCropCanvas();
+        updateApplyBtn();
+      }
+    };
+    img.src = e.target.result;
+  };
+  reader.readAsDataURL(file);
+}
+
+function setupCrop() {
+  if (!sourceImg || !currentComponent) return;
+  const c = currentComponent;
+
+  let aspectW = c.w, aspectH = c.h;
+  if (c.h === 0) {
+    aspectW = sourceImg.width; aspectH = sourceImg.height;
+  }
+
+  const imgAspect = sourceImg.width / sourceImg.height;
+  const cropAspect = aspectW / aspectH;
+
+  if (imgAspect > cropAspect) {
+    cropH = sourceImg.height;
+    cropW = Math.round(cropH * cropAspect);
+  } else {
+    cropW = sourceImg.width;
+    cropH = Math.round(cropW / cropAspect);
+  }
+
+  // Store base (zoom 1.0) dimensions
+  baseCropW = cropW;
+  baseCropH = cropH;
+
+  cropX = Math.round((sourceImg.width  - cropW) / 2);
+  cropY = Math.round((sourceImg.height - cropH) / 2);
+
+  const isVariable = c.h === 0;
+  renderCropCanvas();
+  cropControls.style.display  = isVariable ? 'none' : 'flex';
+  zoomControls.style.display  = 'flex';
+  setResizeHandles(isVariable);
+  cropInstructions.style.display = 'block';
+  cropInstructions.textContent = isVariable
+    ? 'Drag the top or bottom handle to set the crop height. Drag the image to reposition vertically.'
+    : 'Drag to reposition the crop box. The gold box shows exactly what will be exported. Use the zoom slider to zoom in and crop a tighter region.';
+  outputPanel.style.display = 'none';
+  outputBlob = null;
+}
+
+function renderCropCanvas() {
+  if (!sourceImg) return;
+  const maxW = document.getElementById('canvas-area').clientWidth - 0;
+  const maxH = 520;
+  const scale = Math.min(maxW / sourceImg.width, maxH / sourceImg.height, 1);
+  canvasDisplayScale = scale;
+
+  cropCanvas.width  = Math.round(sourceImg.width  * scale);
+  cropCanvas.height = Math.round(sourceImg.height * scale);
+
+  const ctx = cropCanvas.getContext('2d');
+  ctx.drawImage(sourceImg, 0, 0, cropCanvas.width, cropCanvas.height);
+
+  canvasPlaceholder.style.display = 'none';
+  cropCanvas.style.display = 'block';
+
+  if (currentComponent && cropW > 0) {
+    const ox = Math.round(cropX * scale);
+    const oy = Math.round(cropY * scale);
+    const ow = Math.round(cropW * scale);
+    const oh = Math.round(cropH * scale);
+
+    cropOverlay.style.display = 'block';
+    cropOverlay.style.left   = (cropCanvas.offsetLeft + ox) + 'px';
+    cropOverlay.style.top    = (cropCanvas.offsetTop  + oy) + 'px';
+    cropOverlay.style.width  = ow + 'px';
+    cropOverlay.style.height = oh + 'px';
+  }
+}
+
+function positionOverlay() {
+  if (!currentComponent || !sourceImg) return;
+  const rect = cropCanvas.getBoundingClientRect();
+  const canvasAreaRect = document.getElementById('canvas-area').getBoundingClientRect();
+  const scale = canvasDisplayScale;
+  const ox = Math.round(cropX * scale);
+  const oy = Math.round(cropY * scale);
+  const ow = Math.round(cropW * scale);
+  const oh = Math.round(cropH * scale);
+  const relLeft = rect.left - canvasAreaRect.left;
+  const relTop  = rect.top  - canvasAreaRect.top;
+  cropOverlay.style.left   = (relLeft + ox) + 'px';
+  cropOverlay.style.top    = (relTop  + oy) + 'px';
+  cropOverlay.style.width  = ow + 'px';
+  cropOverlay.style.height = oh + 'px';
+}
+
+if (window.ResizeObserver) {
+  new ResizeObserver(positionOverlay).observe(document.getElementById('canvas-area'));
+}
+
+cropCanvas.addEventListener('mousedown', e => {
+  if (!currentComponent) return;
+  isDragging = true;
+  dragStartX = e.clientX;
+  dragStartY = e.clientY;
+  dragStartCropX = cropX;
+  dragStartCropY = cropY;
+  e.preventDefault();
+});
+window.addEventListener('mousemove', e => {
+  if (isDragging) {
+    const dx = Math.round((e.clientX - dragStartX) / canvasDisplayScale);
+    const dy = Math.round((e.clientY - dragStartY) / canvasDisplayScale);
+    cropX = Math.max(0, Math.min(sourceImg.width  - cropW, dragStartCropX + dx));
+    cropY = Math.max(0, Math.min(sourceImg.height - cropH, dragStartCropY + dy));
+    positionOverlay();
+  } else if (isResizing) {
+    const dy = Math.round((e.clientY - resizeStartY) / canvasDisplayScale);
+    applyResize(dy);
+  }
+});
+window.addEventListener('mouseup', () => { isDragging = false; isResizing = false; });
+
+cropCanvas.addEventListener('touchstart', e => {
+  if (!currentComponent) return;
+  isDragging = true;
+  dragStartX = e.touches[0].clientX;
+  dragStartY = e.touches[0].clientY;
+  dragStartCropX = cropX; dragStartCropY = cropY;
+  e.preventDefault();
+}, { passive: false });
+window.addEventListener('touchmove', e => {
+  if (isDragging) {
+    const dx = Math.round((e.touches[0].clientX - dragStartX) / canvasDisplayScale);
+    const dy = Math.round((e.touches[0].clientY - dragStartY) / canvasDisplayScale);
+    cropX = Math.max(0, Math.min(sourceImg.width  - cropW, dragStartCropX + dx));
+    cropY = Math.max(0, Math.min(sourceImg.height - cropH, dragStartCropY + dy));
+    positionOverlay();
+  } else if (isResizing) {
+    const dy = Math.round((e.touches[0].clientY - resizeStartY) / canvasDisplayScale);
+    applyResize(dy);
+  }
+});
+window.addEventListener('touchend', () => { isDragging = false; isResizing = false; });
+
+function moveCrop(dx, dy) {
+  if (!sourceImg) return;
+  cropX = Math.max(0, Math.min(sourceImg.width  - cropW, cropX + dx));
+  cropY = Math.max(0, Math.min(sourceImg.height - cropH, cropY + dy));
+  positionOverlay();
+}
+function centerCrop() {
+  if (!sourceImg) return;
+  cropX = Math.round((sourceImg.width  - cropW) / 2);
+  cropY = Math.round((sourceImg.height - cropH) / 2);
+  positionOverlay();
+}
+
+function applyResize(dy) {
+  const minH = 20;
+  if (resizeEdge === 'top') {
+    const cropBottom = resizeStartCropY + resizeStartCropH;
+    const newCropY = Math.max(0, Math.min(cropBottom - minH, resizeStartCropY + dy));
+    cropY = newCropY;
+    cropH = cropBottom - newCropY;
+  } else {
+    const newBottom = Math.min(sourceImg.height, Math.max(resizeStartCropY + minH, resizeStartCropY + resizeStartCropH + dy));
+    cropH = newBottom - resizeStartCropY;
+  }
+  baseCropH = cropH;
+  positionOverlay();
+}
+
+function updateApplyBtn() {
+  applyBtn.disabled = !(sourceImg && currentComponent);
+}
+
+function applyAndPreview() {
+  if (!sourceImg || !currentComponent) return;
+  const c = currentComponent;
+  let outW = c.w, outH = c.h;
+
+  if (outH === 0) {
+    const scale = outW / cropW;
+    outH = Math.round(cropH * scale);
+  }
+
+  if (compSelect.value === 'stacking-cards-portrait' && document.getElementById('chaptered-toggle').checked) {
+    outW = 300; outH = 375;
+  }
+
+  outputCanvas.width  = outW;
+  outputCanvas.height = outH;
+  const ctx = outputCanvas.getContext('2d');
+  ctx.drawImage(sourceImg, cropX, cropY, cropW, cropH, 0, 0, outW, outH);
+
+  outputCanvas.toBlob(blob => {
+    outputBlob = blob;
+    const url = URL.createObjectURL(blob);
+    outputPreview.src = url;
+    const kb = Math.round(blob.size / 1024);
+    outSize.textContent = `${outW}×${outH}px · ${kb} KB`;
+    outFilename.textContent = getFilename();
+    outputPanel.style.display = 'block';
+    document.getElementById('output-preview-wrap').classList.add('visible');
+    outputPanel.scrollIntoView({ behavior: 'smooth', block: 'nearest' });
+  }, 'image/jpeg', 0.92);
+}
+
+function downloadImage() {
+  if (!outputBlob) return;
+  const url = URL.createObjectURL(outputBlob);
+  const a = document.createElement('a');
+  a.href = url;
+  a.download = getFilename();
+  a.click();
+  URL.revokeObjectURL(url);
+}
+
+window.addEventListener('resize', () => {
+  if (sourceImg) renderCropCanvas();
+  positionOverlay();
+});
+</script>
+</body>
+</html>
